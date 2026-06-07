@@ -1483,6 +1483,25 @@
   .day-items li::before { content: '→'; color: var(--gold); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
 
   /* ── FOOTER ── */
+  #music-btn {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 999;
+    background: var(--ocean);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.3rem;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(26,75,110,0.4);
+    transition: transform 0.2s, background 0.2s;
+  }
+  #music-btn:hover { background: var(--ocean-light); transform: scale(1.1); }
+  #music-btn.muted { opacity: 0.5; }
+
   footer {
     background: var(--ocean);
     color: rgba(255,255,255,0.6);
@@ -3820,6 +3839,12 @@
     <div id="comments-list"><div class="comments-loading">Loading comments...</div></div>
   </div>
 </section>
+<!-- MUSIC PLAYER -->
+<div id="yt-player-wrap" style="position:fixed;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;bottom:0;right:0;">
+  <div id="yt-player"></div>
+</div>
+<button id="music-btn" onclick="toggleMusic()" title="Toggle music" aria-label="Toggle background music">🎵</button>
+
 <footer>
   <div class="footer-logo">Vouliagmeni, Greece</div>
   <p><strong>Our Family Vacation · June 2026</strong></p>
@@ -3828,6 +3853,48 @@
 </footer>
 
 <script>
+  /* ===== BACKGROUND MUSIC (YouTube IFrame API) ===== */
+  var ytPlayer = null;
+  var musicBtn = document.getElementById('music-btn');
+  var musicStarted = false;
+
+  var tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+
+  window.onYouTubeIframeAPIReady = function() {
+    ytPlayer = new YT.Player('yt-player', {
+      videoId: 'q-sr_EqFY-E',
+      playerVars: { autoplay: 0, loop: 1, playlist: 'q-sr_EqFY-E', controls: 0 }
+    });
+  };
+
+  function startMusic() {
+    if (musicStarted || !ytPlayer) return;
+    musicStarted = true;
+    ytPlayer.playVideo();
+  }
+
+  function toggleMusic() {
+    if (!ytPlayer) return;
+    if (!musicStarted) { startMusic(); return; }
+    if (ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+      ytPlayer.pauseVideo();
+      musicBtn.classList.add('muted');
+      musicBtn.textContent = '🔇';
+    } else {
+      ytPlayer.playVideo();
+      musicBtn.classList.remove('muted');
+      musicBtn.textContent = '🎵';
+    }
+  }
+
+  document.addEventListener('click', function onFirstClick(e) {
+    if (e.target.id === 'music-btn') return;
+    startMusic();
+    document.removeEventListener('click', onFirstClick);
+  });
+
   /* ===== NAV SCROLL ARROWS ===== */
   function scrollNav(dir) {
     var nav = document.getElementById('main-nav');
@@ -3954,10 +4021,9 @@
     { date:'2026-06-17', time:'5:30 AM',  icon:'family',  color:'#c8953a', title:'Beckman Family Arrive Athens', desc:'Beckman family lands in Athens at 5:30 AM. Welcome to Greece! Head to Villa Terra Mare.' },
     { date:'2026-06-18', time:'8:25 PM',  icon:'plane',   color:'#1a4b6e', title:'Feldman Family and Vika Depart', desc:'Delta DL0212 departs JFK Terminal 4. 9h 55m nonstop to Athens. Check in 3+ hours early!' },
     { date:'2026-06-19', time:'1:20 PM',  icon:'flag',    color:'#1a4b6e', title:'Feldman Family and Vika Arrive', desc:'DL0212 lands in Athens at 1:20 PM. Taxi to Villa Terra Mare — approx 38 EUR, 20-25 min.' },
-    { date:'2026-06-20', time:'6:00 PM',  icon:'home',    color:'#c8953a', title:'Family Dinner with Chef in Villa', desc:'Private chef dinner at Villa Terra Mare. A special evening together before the wedding festivities begin!' },
+    { date:'2026-06-20', time:'All Day',  icon:'swim',    color:'#2a6a9e', title:'Lake Vouliagmeni Day',         desc:'A full day at the magical thermal lake. Swim, fish spa, relax on sunbeds, lunch at Labros.' },
     { date:'2026-06-21', time:'6:30 PM',  icon:'rings',   color:'#9b4dca', title:'Erica and Alan Wedding',       desc:'Wedding at Island Resort, Vari (166 72). Formal/Black-Tie Optional. Reserve blue and white for the wedding party! Runs until 3:00 AM.' },
     { date:'2026-06-22', time:'6:00 PM',  icon:'champ',   color:'#c8609a', title:'The Day After Party',          desc:'Celebration continues at Lake Vouliagmeni (166 71). Summer cocktail attire. Dinner and drinks until 11:30 PM.' },
-    { date:'2026-06-23', time:'All Day',  icon:'swim',    color:'#2a6a9e', title:'Lake Vouliagmeni Day',         desc:'A full day at the magical thermal lake. Swim, fish spa, relax on sunbeds, lunch at Labros.' },
     { date:'2026-06-24', time:'All Day',  icon:'temple',  color:'#b8522a', title:'Athens - Acropolis Day',       desc:'Day trip to Athens. Acropolis and Parthenon, Acropolis Museum, lunch in Plaka, Monastiraki.' },
     { date:'2026-06-24', time:'7:55 AM',  icon:'plane',   color:'#c8953a', title:'Beckman Family Fly Home',      desc:'Beckman family depart Athens at 7:55 AM, arriving JFK at 11:25 AM. Safe travels!' },
     { date:'2026-06-25', time:'3:30 PM',  icon:'plane',   color:'#9b4dca', title:'Vika Flies Home to NYC',       desc:'DL213 departs Athens 3:30 PM, arrives JFK 7:40 PM. Direct, Main Cabin. Operated by Delta Air Lines.' },
