@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root {
     --ocean: #1a4b6e;
@@ -2215,6 +2217,7 @@
     <button class="nav-btn" onclick="showSection('daytrips', this)">🏛 Day Trips</button>
     <button class="nav-btn" onclick="showSection('rhodes', this)">🏝 Rhodes</button>
     <button class="nav-btn" onclick="showSection('videos', this)">🎬 Videos</button>
+    <button class="nav-btn" onclick="showSection('map', this)">🗺 Map</button>
     <button class="nav-btn" onclick="showSection('tips', this)">💡 Tips & Plan</button>
     <button class="nav-btn" onclick="showSection('comments', this)">💬 Comments</button>
   </nav>
@@ -4081,6 +4084,26 @@
     <div id="timeline-list"></div>
   </div>
 </section>
+<!-- ── MAP ── -->
+<section id="map" class="section">
+  <div class="section-header">
+    <div class="section-label">Everything in One Place</div>
+    <h2 class="section-title">The <em>Trip Map</em></h2>
+    <p class="section-desc">All our key spots in one place — villa, wedding venues, beaches, restaurants, and activities. Click any pin for details.</p>
+  </div>
+
+  <!-- Legend -->
+  <div id="map-legend" style="display:flex;flex-wrap:wrap;gap:0.6rem;margin-bottom:1.2rem;">
+    <span style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;font-weight:600;"><span style="background:#c8953a;width:14px;height:14px;border-radius:50%;display:inline-block;"></span> Villa & Venues</span>
+    <span style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;font-weight:600;"><span style="background:#2a6a9e;width:14px;height:14px;border-radius:50%;display:inline-block;"></span> Beaches</span>
+    <span style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;font-weight:600;"><span style="background:#b8522a;width:14px;height:14px;border-radius:50%;display:inline-block;"></span> Restaurants</span>
+    <span style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;font-weight:600;"><span style="background:#6b7c4a;width:14px;height:14px;border-radius:50%;display:inline-block;"></span> Activities</span>
+    <span style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;font-weight:600;"><span style="background:#9b4dca;width:14px;height:14px;border-radius:50%;display:inline-block;"></span> Wedding</span>
+  </div>
+
+  <div id="trip-map" style="height:560px;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);"></div>
+</section>
+
 <!-- ── TIPS & ITINERARY ── -->
 <section id="tips" class="section">
   <div class="section-header">
@@ -4818,7 +4841,65 @@
     if (id === 'comments') { setTimeout(loadComments, 60); }
     if (id === 'calendar') { setTimeout(function(){ renderCal(); renderTimeline(); }, 60); }
     if (id === 'weather')  { setTimeout(loadWeather, 60); }
+    if (id === 'map')      { setTimeout(initMap, 60); }
   };
+
+  /* ===== TRIP MAP ===== */
+  var mapInitialized = false;
+  function initMap() {
+    if (mapInitialized) return;
+    mapInitialized = true;
+
+    var map = L.map('trip-map').setView([37.817, 23.792], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 18
+    }).addTo(map);
+
+    function pin(color, emoji) {
+      return L.divIcon({
+        className: '',
+        html: '<div style="background:' + color + ';width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);">' + emoji + '</div>',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -18]
+      });
+    }
+
+    var gold   = '#c8953a';
+    var blue   = '#2a6a9e';
+    var terra  = '#b8522a';
+    var olive  = '#6b7c4a';
+    var purple = '#9b4dca';
+
+    var places = [
+      // Villa & Venues
+      { lat:37.8248, lng:23.8390, color:gold,   emoji:'🏡', title:'Villa Terra Mare', desc:'Our home base — 5-bed private villa with pool & sea views, Vari' },
+      // Wedding
+      { lat:37.8215, lng:23.8355, color:purple, emoji:'💍', title:'Island Resort — Wedding Venue', desc:'Erica & Alan\'s wedding, June 21 · Vari, 166 72' },
+      { lat:37.8118, lng:23.7841, color:purple, emoji:'🥂', title:'Day After Party — Lake Vouliagmeni', desc:'Celebration continues here June 22 · Summer cocktail attire' },
+      // Beaches
+      { lat:37.8063, lng:23.7820, color:blue,   emoji:'🏖', title:'Vouliagmeni Beach', desc:'The main town beach — sunbeds, water sports, cafés' },
+      { lat:37.8118, lng:23.7841, color:blue,   emoji:'🌊', title:'Lake Vouliagmeni', desc:'Magical thermal lake — fish spa, sunbeds, lunch at Labros' },
+      { lat:37.8339, lng:23.7870, color:blue,   emoji:'⭐', title:'Astir Beach Club', desc:'Most exclusive beach club on the Riviera — book sunbeds in advance' },
+      { lat:37.7980, lng:23.7780, color:blue,   emoji:'🏄', title:'Kavouri Beach', desc:'Long sandy public beach, great for families' },
+      { lat:37.8270, lng:23.7890, color:blue,   emoji:'🐠', title:'Limanakia (Rocky Coves)', desc:'Hidden sea-glass coves below the cliffs — locals\' secret spot' },
+      // Restaurants
+      { lat:37.8053, lng:23.7823, color:terra,  emoji:'🐟', title:'Ithaki Restaurant', desc:'Finest seafood on the Riviera · €€€€ · Vouliagmeni waterfront' },
+      { lat:37.8339, lng:23.7869, color:terra,  emoji:'🍣', title:'Matsuhisa Athens', desc:'Nobu\'s Mediterranean outpost · €€€€ · Astir Palace' },
+      { lat:37.8060, lng:23.7830, color:terra,  emoji:'🍷', title:'Lemel', desc:'Upscale Mediterranean · €€€ · Vouliagmeni' },
+      { lat:37.8100, lng:23.7850, color:terra,  emoji:'🦑', title:'O Kavvalos', desc:'Beloved fish taverna · €€ · Vouliagmeni' },
+      // Activities
+      { lat:37.8118, lng:23.7841, color:olive,  emoji:'🚣', title:'Kayak & Paddleboard Rentals', desc:'Water sports available at Lake Vouliagmeni area' },
+    ];
+
+    places.forEach(function(p) {
+      L.marker([p.lat, p.lng], { icon: pin(p.color, p.emoji) })
+        .addTo(map)
+        .bindPopup('<strong>' + p.title + '</strong><br><span style="font-size:0.85rem;color:#555;">' + p.desc + '</span>', { maxWidth: 220 });
+    });
+  }
 
 </script>
 </body>
